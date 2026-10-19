@@ -35,9 +35,11 @@ void httpSendResponse(WiFiClient*);
 /* 基本属性定義  */
 #define SPI_SPEED   115200            // SPI通信速度
 
-// ルーター接続情報
-#define WIFI_SSID "Bancho_IoT"
-#define WIFI_PASSWORD "nttnttntt"
+// Delete the include line and uncomment the two lines below to enter your Wi-Fi details.
+#include <credentials.h>
+//  #define WIFI_SSID     "InputYourSSID"
+//  #define WIFI_PASSWORD "InputYourPassword"
+
 // Multicast DNS名
 #define LEDS_NAME "LED_2F"
 
@@ -537,17 +539,59 @@ void htmlTask(void * pvParameters) {
 
 /* Wi-Fiルーターに接続する */
 void connectToWifi() {
-  Serial.print("Connecting to Wi-Fi ");
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  Serial.print("\nScanning ");
+  Serial.println(WIFI_SSID);
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect(false);
+
+  int n = WiFi.scanNetworks();
+
+  int targetIndex = -1;
+  int bestRSSI = -1000;
+
+  for (int i = 0; i < n; i++) {
+    int rssi = WiFi.RSSI(i);
+    Serial.printf("Found: SSID=%-32s BSSID=%s CH=%2d RSSI=%3d\n", WiFi.SSID(i).c_str(), WiFi.BSSIDstr(i).c_str(), WiFi.channel(i), rssi);
+    if (WiFi.SSID(i) == WIFI_SSID) {
+      if (rssi > bestRSSI) {
+        bestRSSI = rssi;
+        targetIndex = i;
+      }
+    }
   }
-  Serial.println("");
-  // モニターにローカル IPアドレスを表示する
-  Serial.println("WiFi connected.");
-  Serial.print("  *IP address: ");
-  Serial.println(WiFi.localIP());
+
+  if (targetIndex != -1) {
+    uint8_t bssid[6];
+    memcpy(bssid, WiFi.BSSID(targetIndex), 6);
+    int channel = WiFi.channel(targetIndex);
+
+    WiFi.begin(
+      WIFI_SSID,
+      WIFI_PASSWORD,
+      channel,
+      bssid,
+      true);
+
+    Serial.print("Connecting");
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+
+    Serial.println();
+    Serial.println("WiFi connected");
+    Serial.printf("SSID : %s\n", WiFi.SSID(targetIndex).c_str());
+    Serial.printf("BSSID: %s\n", WiFi.BSSIDstr(targetIndex).c_str());
+    Serial.printf("CH   : %2d\n", channel);
+    Serial.printf("RSSI : %3d\n", WiFi.RSSI(targetIndex));
+    Serial.printf("IP Address : %s\n", WiFi.localIP().toString().c_str());
+
+  } else {
+    Serial.print(WIFI_SSID);
+    Serial.println(" not found");
+  }
+
+  WiFi.scanDelete();
 }
 
 /* Multicast DNSを開始する */
