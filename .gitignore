@@ -1,0 +1,23 @@
+# === Arduino / VS Code ビルド生成物 ===
+build/
+.build/
+out/
+
+# === VS Code C/C++ 拡張機能のキャッシュ (巨大なため除外必須) ===
+.vscode/.browse.c_cpp.db*
+.vscode/ipch/
+
+# === VS Code の設定ファイル ===
+# 個人環境に依存するもの、または自動生成されるものは除外します
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/settings.json
+.vscode/c_cpp_properties.json
+.vscode/*.log
+
+# === OSが自動生成するキャッシュファイル ===
+Thumbs.db
+.DS_Store
+
+# === PlatformIOの残骸対策 ===
+.pio/
